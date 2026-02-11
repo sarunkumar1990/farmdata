@@ -404,6 +404,8 @@ class _ReportScreenState extends State<ReportScreen> {
                          final m = entry['worker_male_count'] ?? 0;
                          final f = entry['worker_female_count'] ?? 0;
                          subtitle += ' | Users: M:$m F:$f';
+                      } else if (category == 'Pesticides') {
+                        subtitle += ' | ${entry['pesticide_name'] ?? ''}';
                       } else if (category == 'Other Expense') {
                         subtitle += ' | ${entry['other_expense_description'] ?? ''}';
                       }

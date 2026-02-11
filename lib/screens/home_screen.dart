@@ -39,8 +39,12 @@ class _HomeScreenState extends State<HomeScreen> {
   final _teaFoodAmountController = TextEditingController();
 
   // Other Expense Fields
-  final _otherExpenseController = TextEditingController(); // Amount or Description? Assuming amount based on contexts, but usually "Input" implies text. User said "Other Expanse input". I'll make it amount for calculation purposes, maybe add description too? User said "Other Expanse input". I will assume Amount for now as it needs to be debit.
+  final _otherExpenseController = TextEditingController(); 
   final _otherExpenseDescriptionController = TextEditingController();
+
+  // Pesticide Expense Fields
+  List<Map<String, dynamic>> _pesticideItems = [];
+  double _totalPesticideAmount = 0.0;
 
 
   // Payment Entry Fields
@@ -52,7 +56,7 @@ class _HomeScreenState extends State<HomeScreen> {
   final List<String> _farmOptions = ['Poovai South', 'Poovai North'];
   final List<String> _buyerOptions = ['Ravi', 'Moorthy'];
   final List<String> _mangoOptions = ['Rumenia', 'Senthuram', 'Ottu', 'Nattu Mango'];
-  final List<String> _expenseSubtypeOptions = ['Workers', 'Tea/Food Expense', 'Other Expense'];
+  final List<String> _expenseSubtypeOptions = ['Workers', 'Tea/Food Expense', 'Pesticides', 'Other Expense'];
   final List<String> _paymentModeOptions = ['Cash', 'Bank'];
   final List<String> _countOptions = List.generate(10, (index) => (index + 1).toString());
 
@@ -81,6 +85,23 @@ class _HomeScreenState extends State<HomeScreen> {
         _selectedDate = picked;
       });
     }
+  }
+
+  void _showPesticideEntryDialog() {
+    showDialog(
+      context: context,
+      builder: (context) => Dialog.fullscreen(
+        child: PesticideEntryScreen(
+          initialItems: _pesticideItems,
+          onSave: (items) {
+            setState(() {
+              _pesticideItems = items;
+              _totalPesticideAmount = items.fold(0.0, (sum, item) => sum + (item['amount'] as double));
+            });
+          },
+        ),
+      ),
+    );
   }
 
   Future<void> _submitForm() async {
@@ -146,6 +167,11 @@ class _HomeScreenState extends State<HomeScreen> {
             data['other_expense_description'] = _otherExpenseDescriptionController.text;
             data['other_expense_amount'] = double.parse(_otherExpenseController.text);
             data['total_amount'] = double.parse(_otherExpenseController.text);
+          } else if (_expenseSubtype == 'Pesticides') {
+            data['pesticide_items'] = _pesticideItems;
+            data['total_amount'] = _totalPesticideAmount;
+            // Optionally save a summary name or just rely on items
+            data['pesticide_name'] = _pesticideItems.map((e) => '${e['name']} (${e['quantity']} ${e['unit']})').join(', ');
           }
         }
 
@@ -190,6 +216,10 @@ class _HomeScreenState extends State<HomeScreen> {
              _teaFoodAmountController.clear();
              _otherExpenseController.clear();
              _otherExpenseDescriptionController.clear();
+             // _pesticideNameController.clear();
+             // _pesticideAmountController.clear();
+             _pesticideItems.clear();
+             _totalPesticideAmount = 0.0;
           });
         }
       } catch (e, stackTrace) {
@@ -434,6 +464,29 @@ class _HomeScreenState extends State<HomeScreen> {
                     keyboardType: TextInputType.number,
                     validator: (val) => (val == null || val.isEmpty) ? 'Enter amount' : null,
                   ),
+                ] else if (_expenseSubtype == 'Pesticides') ...[
+                  OutlinedButton.icon(
+                    onPressed: _showPesticideEntryDialog,
+                    icon: const Icon(Icons.add_shopping_cart),
+                    label: const Text('Add Pesticides Details'),
+                  ),
+                  const SizedBox(height: 10),
+                  if (_pesticideItems.isNotEmpty)
+                    Container(
+                      padding: const EdgeInsets.all(12),
+                      decoration: BoxDecoration(
+                        border: Border.all(color: Colors.grey),
+                        borderRadius: BorderRadius.circular(8),
+                      ),
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Text('Added Items (${_pesticideItems.length})', style: const TextStyle(fontWeight: FontWeight.bold)),
+                          const SizedBox(height: 4),
+                          Text('Total Amount: ₹$_totalPesticideAmount', style: const TextStyle(color: Colors.green, fontWeight: FontWeight.bold, fontSize: 16)),
+                        ],
+                      ),
+                    ),
                 ],
               ],
 
@@ -448,5 +501,184 @@ class _HomeScreenState extends State<HomeScreen> {
         ),
       ),
     );
+  }
+}
+
+class PesticideEntryScreen extends StatefulWidget {
+  final List<Map<String, dynamic>> initialItems;
+  final Function(List<Map<String, dynamic>>) onSave;
+
+  const PesticideEntryScreen({
+    super.key,
+    required this.initialItems,
+    required this.onSave,
+  });
+
+  @override
+  State<PesticideEntryScreen> createState() => _PesticideEntryScreenState();
+}
+
+class _PesticideEntryScreenState extends State<PesticideEntryScreen> {
+  late List<Map<String, dynamic>> _items;
+  final _nameController = TextEditingController();
+  final _qtyController = TextEditingController();
+  final _rateController = TextEditingController();
+  String _selectedUnit = 'Ltr'; // Default unit
+
+  @override
+  void initState() {
+    super.initState();
+    _items = List.from(widget.initialItems);
+  }
+
+  @override
+  void dispose() {
+    _nameController.dispose();
+    _qtyController.dispose();
+    _rateController.dispose();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return Scaffold(
+      appBar: AppBar(
+        title: const Text('Add Pesticides Details'),
+        leading: IconButton(
+          icon: const Icon(Icons.close),
+          onPressed: () => Navigator.of(context).pop(),
+        ),
+      ),
+      body: Padding(
+        padding: const EdgeInsets.all(16.0),
+        child: Column(
+          children: [
+            // Single Input Row
+            Row(
+              children: [
+                Expanded(
+                  flex: 5,
+                  child: TextField(
+                    controller: _nameController,
+                    decoration: const InputDecoration(labelText: 'Name'),
+                  ),
+                ),
+                const SizedBox(width: 8),
+                Expanded(
+                  flex: 1,
+                  child: TextField(
+                    controller: _qtyController,
+                    decoration: const InputDecoration(labelText: 'Qty'),
+                    keyboardType: TextInputType.number,
+                  ),
+                ),
+                const SizedBox(width: 8),
+                Expanded(
+                  flex: 1,
+                  child: DropdownButtonFormField<String>(
+                    value: _selectedUnit,
+                    decoration: const InputDecoration(labelText: 'Unit'),
+                    isExpanded: true,
+                    items: ['Ltr', 'Kg'].map((e) => DropdownMenuItem(value: e, child: Text(e, style: const TextStyle(fontSize: 12)))).toList(),
+                    onChanged: (val) {
+                      if (val != null) setState(() => _selectedUnit = val);
+                    },
+                  ),
+                ),
+                const SizedBox(width: 8),
+                Expanded(
+                  flex: 3,
+                  child: TextField(
+                    controller: _rateController,
+                    decoration: const InputDecoration(labelText: 'Rate'),
+                    keyboardType: TextInputType.number,
+                  ),
+                ),
+              ],
+            ),
+            const SizedBox(height: 10),
+            SizedBox(
+              width: double.infinity,
+              child: ElevatedButton.icon(
+                onPressed: _addItem,
+                icon: const Icon(Icons.add),
+                label: const Text('Add Item'),
+              ),
+            ),
+            const Divider(),
+            
+            // List of Items
+            Expanded(
+              child: _items.isEmpty
+                  ? const Center(child: Text('No items added'))
+                  : ListView.builder(
+                      itemCount: _items.length,
+                      itemBuilder: (context, index) {
+                        final item = _items[index];
+                        return ListTile(
+                          title: Text(item['name']),
+                          subtitle: Text('Qty: ${item['quantity']} ${item['unit']} | Rate: ₹${item['rate']}'),
+                          trailing: Row(
+                            mainAxisSize: MainAxisSize.min,
+                            children: [
+                              Text('₹${item['amount']}', style: const TextStyle(fontWeight: FontWeight.bold)),
+                              IconButton(
+                                icon: const Icon(Icons.remove_circle, color: Colors.red),
+                                onPressed: () {
+                                  setState(() {
+                                    _items.removeAt(index);
+                                  });
+                                },
+                              ),
+                            ],
+                          ),
+                        );
+                      },
+                    ),
+            ),
+            
+            const Divider(),
+            // Summary and Submit
+            Row(
+              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+              children: [
+                Text(
+                  'Total: ₹${_items.fold(0.0, (sum, item) => sum + (item['amount'] as double))}',
+                  style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 18),
+                ),
+                ElevatedButton(
+                  onPressed: () {
+                    widget.onSave(_items);
+                    Navigator.pop(context);
+                  },
+                  child: const Text('Save & Close'),
+                ),
+              ],
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  void _addItem() {
+    if (_nameController.text.isNotEmpty && 
+        _qtyController.text.isNotEmpty && 
+        _rateController.text.isNotEmpty) {
+      setState(() {
+        double qty = double.tryParse(_qtyController.text) ?? 0;
+        double rate = double.tryParse(_rateController.text) ?? 0;
+        _items.add({
+          'name': _nameController.text,
+          'quantity': qty,
+          'unit': _selectedUnit,
+          'rate': rate,
+          'amount': qty * rate,
+        });
+        _nameController.clear();
+        _qtyController.clear();
+        _rateController.clear();
+      });
+    }
   }
 }

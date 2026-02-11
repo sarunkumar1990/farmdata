@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:farm_data/screens/home_screen.dart';
 import 'package:farm_data/screens/report_screen.dart';
 import 'package:farm_data/screens/profile_screen.dart';
+import 'package:farm_data/services/biometric_service.dart';
 
 class MainScreen extends StatefulWidget {
   const MainScreen({super.key});

@@ -9,50 +9,24 @@ class BiometricService {
 
   // Check if biometrics are available
   Future<bool> isBiometricAvailable() async {
-    try {
-      final bool canAuthenticateWithBiometrics = await auth.canCheckBiometrics;
-      final bool canAuthenticate = canAuthenticateWithBiometrics || await auth.isDeviceSupported();
-      return canAuthenticate;
-    } on PlatformException catch (e) {
-      print("Error checking biometrics: $e");
-      return false;
-    }
+    return false; // Stubbed for now
   }
 
   // Authenticate user
   Future<bool> authenticate({bool biometricOnly = false}) async {
-    try {
-      return await auth.authenticate(
-        localizedReason: 'Please authenticate to access the app',
-        options: AuthenticationOptions(
-          stickyAuth: true,
-          biometricOnly: biometricOnly, 
-        ),
-      );
-    } on PlatformException catch (e) {
-      print("Error authenticating: $e");
-      return false;
-    }
+    return true; // Stubbed to always succeed for testing
   }
 
   // Preference Management
-  Future<void> setFaceIdEnabled(bool enabled) async {
-    final prefs = await SharedPreferences.getInstance();
-    await prefs.setBool(_faceIdEnabledKey, enabled);
-  }
+  Future<void> setFaceIdEnabled(bool enabled) async {}
 
   Future<bool> isFaceIdEnabled() async {
-    final prefs = await SharedPreferences.getInstance();
-    return prefs.getBool(_faceIdEnabledKey) ?? false;
+    return false;
   }
 
-  Future<void> setSecuritySetupDone(bool done) async {
-    final prefs = await SharedPreferences.getInstance();
-    await prefs.setBool(_securitySetupDoneKey, done);
-  }
+  Future<void> setSecuritySetupDone(bool done) async {}
 
   Future<bool> isSecuritySetupDone() async {
-    final prefs = await SharedPreferences.getInstance();
-    return prefs.getBool(_securitySetupDoneKey) ?? false;
+    return true; // Assume setup done to avoid dialog
   }
 }

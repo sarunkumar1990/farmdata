@@ -20,15 +20,14 @@ class MyApp extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return LifecycleManager(
-      child: MaterialApp(
-        title: 'Farm Data',
-        theme: ThemeData(
-          colorScheme: ColorScheme.fromSeed(seedColor: Colors.green),
-          useMaterial3: true,
-        ),
-        home: const AuthWrapper(),
+    return MaterialApp(
+      title: 'Farm Data',
+      theme: ThemeData(
+        colorScheme: ColorScheme.fromSeed(seedColor: Colors.green),
+        useMaterial3: true,
       ),
+      home: const AuthWrapper(),
+      builder: (context, child) => LifecycleManager(child: child ?? const SizedBox()),
     );
   }
 }
